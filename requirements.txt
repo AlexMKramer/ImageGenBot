@@ -1,0 +1,4 @@
+auto1111sdk>=0.0.95
+python-dotenv
+py-cord
+Pillow

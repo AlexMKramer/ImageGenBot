@@ -1,0 +1,476 @@
+import discord
+from discord import option
+from discord.ext import commands
+import os
+import random
+import csv
+
+import core.auto1111
+import core.queueHandler
+
+wait_message = []
+
+
+def funny_message():
+    with open('core/resources/messages.csv', encoding='UTF-8') as csv_file:
+        message_data = list(csv.reader(csv_file, delimiter='|'))
+        for row in message_data:
+            wait_message.append(row[0])
+    wait_message_count = len(wait_message) - 1
+    text = wait_message[random.randint(0, wait_message_count)]
+    return text
+
+
+# Search lora folder
+def get_loras():
+    models_folder_path = os.path.join(os.getcwd(), "models/")
+    for dirpath, dirnames, filenames in os.walk(models_folder_path):
+        subfolder_name = 'loras'
+        # Check if the target subfolder is in the current directory
+        if subfolder_name in dirnames:
+            subfolder_path = os.path.join(dirpath, subfolder_name)
+
+            # List files within the target subfolder
+            subfolder_files = [file for file in os.listdir(subfolder_path) if
+                               os.path.isfile(os.path.join(subfolder_path, file))]
+            matching_files = [os.path.splitext(loras)[0] for loras in subfolder_files]
+            # remove place_loras_here.txt file from the list
+            if 'place_loras_here' in matching_files:
+                matching_files.remove('place_loras_here')
+            return sorted(matching_files)
+    # If the target subfolder is not found
+    return []
+
+
+# Setup models autocomplete
+async def loras_autocomplete(ctx: discord.AutocompleteContext):
+    loras = get_loras()
+    return [lora for lora in loras if lora.startswith(ctx.value.lower())]
+
+
+# Search lora folder
+def get_checkpoints():
+    models_folder_path = os.path.join(os.getcwd(), "models/")
+    for dirpath, dirnames, filenames in os.walk(models_folder_path):
+        subfolder_name = 'checkpoints'
+        # Check if the target subfolder is in the current directory
+        if subfolder_name in dirnames:
+            subfolder_path = os.path.join(dirpath, subfolder_name)
+
+            # List files within the target subfolder
+            subfolder_files = [file for file in os.listdir(subfolder_path) if
+                               os.path.isfile(os.path.join(subfolder_path, file))]
+            matching_files = [os.path.splitext(loras)[0] for loras in subfolder_files]
+            # remove place_checkpoints_here.txt file from the list
+            if 'place_checkpoints_here' in matching_files:
+                matching_files.remove('place_checkpoints_here')
+            return sorted(matching_files)
+    # If the target subfolder is not found
+    return []
+
+
+# Setup lora autocomplete
+async def checkpoints_autocomplete(ctx: discord.AutocompleteContext):
+    checkpoints = get_checkpoints()
+    return [checkpoint for checkpoint in checkpoints if checkpoint.startswith(ctx.value.lower())]
+
+
+height_width_option = [
+    {"height": 512, "width": 512, "aspect_ratio": 1},
+    {"height": 768, "width": 768, "aspect_ratio": 1},
+    {"height": 1024, "width": 1024, "aspect_ratio": 1},
+    {"height": 1152, "width": 896, "aspect_ratio": 1.2857142857142858},
+    {"height": 896, "width": 1152, "aspect_ratio": 0.7777777777777778},
+    {"height": 1216, "width": 832, "aspect_ratio": 1.4615384615384615},
+    {"height": 832, "width": 1216, "aspect_ratio": 0.6842105263157895},
+    {"height": 1344, "width": 768, "aspect_ratio": 1.75},
+    {"height": 768, "width": 1344, "aspect_ratio": 0.5714285714285714},
+    {"height": 1536, "width": 640, "aspect_ratio": 2.4},
+    {"height": 640, "width": 1536, "aspect_ratio": 0.4166666666666667},
+]
+
+
+async def height_width_autocomplete(ctx: discord.AutocompleteContext):
+    return [f"{hw['height']} {hw['width']}" for hw in height_width_option]
+
+
+sampler_options = [
+    'DPM++ 2M Karras',
+    'DPM++ SDE Karras',
+    'DPM++ 2M SDE Exponential',
+    'DPM++ 2M SDE Karras',
+    'Euler a',
+    'Euler',
+    'LMS',
+    'Heun',
+    'DPM2',
+    'DPM2 a',
+    'DPM++ 2S a',
+    'DPM++ 2M',
+    'DPM++ SDE',
+    'DPM++ 2M SDE',
+    'DPM++ 2M SDE Heun',
+    'DPM++ 2M SDE Heun Karras',
+    'DPM++ 2M SDE Heun Exponential',
+    'DPM++ 3M SDE',
+    'DPM++ 3M SDE Karras',
+    'DPM++ 3M SDE Exponential',
+    'DPM fast',
+    'DPM adaptive',
+    'LMS Karras',
+    'DPM2 Karras',
+    'DPM2 a Karras',
+    'DPM++ 2S a Karras'
+    ]
+
+
+async def sampler_autocomplete(ctx: discord.AutocompleteContext):
+    return [sampler for sampler in sampler_options if sampler.startswith(ctx.value.lower())]
+
+
+# set up the main commands used by the bot
+class GenerateCog(commands.Cog, name="Generate", description="Generate images from text"):
+    ctx_parse = discord.ApplicationContext
+    core.queueHandler.queue_loop.start()
+
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.slash_command(description='Create images from text!', guild_only=True)
+    @option(
+        'prompt',
+        str,
+        description='A prompt to condition the model with.',
+        required=True
+    )
+    @option(
+        'negative_prompt',
+        str,
+        description='A negative prompt to condition the model with.',
+        required=False
+    )
+    @option(
+        'model_name',
+        str,
+        description='Choose the checkpoint to use for generating the images with.',
+        required=False,
+        autocomplete=checkpoints_autocomplete
+    )
+    @option(
+        'num_images',
+        int,
+        min_value=1,
+        max_value=4,
+        description='The number of images to generate up to 4.',
+        required=False
+    )
+    @option(
+        'height_width',
+        str,
+        description='The height of the images to generate.',
+        required=False,
+        autocomplete=height_width_autocomplete
+    )
+    @option(
+        'steps',
+        int,
+        description='The number of steps to take in the diffusion process.',
+        required=False
+    )
+    async def draw(self, ctx: discord.ApplicationContext,
+                   *,
+                   prompt,
+                   negative_prompt: str = "",
+                   model_name,
+                   num_images=4,
+                   height_width="1024 1024",
+                   steps=25
+                   ):
+        if model_name is None:
+            # Get a list of the checkpoints
+            model_name = get_checkpoints()
+            # Check if there are any checkpoints available
+            if not model_name:
+                # send a message to the user that there are no checkpoints and break the command
+                await ctx.respond("There are no checkpoints available to use for generating images. Try downloading a "
+                                  "model and placing it in the checkpoints folder.")
+                return
+            else:
+                model_name = model_name[0]
+        model_path = os.path.join(os.getcwd(), "models/checkpoints/" + model_name + ".safetensors")
+        print(model_path)
+
+        # Get the height and width from the user input
+        height, width = height_width.split()
+        height = int(height)
+        width = int(width)
+
+        # Get the default settings for the model chosen
+        with open('core/resources/model_settings.csv', encoding='UTF-8') as csv_file:
+            model_data = list(csv.reader(csv_file, delimiter='|'))
+            # Check if the model name exists in the settings file
+            for row in model_data:
+                if row[0] == model_name:
+                    cfg_scale = int(row[1])
+                    sampler_name = row[2]
+                    clip_skip = row[3]
+                    break
+                else:
+                    cfg_scale = 2
+                    sampler_name = "DPM++ 2M Karras"
+                    clip_skip = 1
+
+        # get a funny message
+        funny_text = funny_message()
+
+        acknowledgement = await ctx.respond(f"**{funny_text}**\nGenerating {num_images} images for you!")
+        # Send the request to the queue
+        await core.queueHandler.add_request(funny_text, acknowledgement, "txt2img", prompt, negative_prompt,
+                                            model_path, num_images, height, width, steps, cfg_scale, sampler_name,
+                                            clip_skip)
+        print(f"Added request to queue: {prompt}, {negative_prompt}, {num_images}, {height}, {width}, {steps},"
+              f" {cfg_scale}, {sampler_name}")
+
+    @commands.slash_command(description='Create images from an image!', guild_only=True)
+    @option(
+        'prompt',
+        str,
+        description='A prompt to condition the model with.',
+        required=True
+    )
+    @option(
+        'attached_image',
+        description='The image to condition the model with.',
+        required=True
+    )
+    @option(
+        'percentage_of_original',
+        int,
+        min_value=1,
+        max_value=100,
+        description='The percentage of the original image to generate.',
+        required=False
+    )
+    @option(
+        'negative_prompt',
+        str,
+        description='A negative prompt to condition the model with.',
+        required=False
+    )
+    @option(
+        'model_name',
+        str,
+        description='Choose the checkpoint to use for generating the images with.',
+        required=False,
+        autocomplete=checkpoints_autocomplete
+    )
+    @option(
+        'num_images',
+        int,
+        min_value=1,
+        max_value=4,
+        description='The number of images to generate up to 4.',
+        required=False
+    )
+    @option(
+        'steps',
+        int,
+        description='The number of steps to take in the diffusion process.',
+        required=False
+    )
+    async def redraw(self, ctx: discord.ApplicationContext,
+                     *,
+                     prompt,
+                     attached_image: discord.Attachment,
+                     percentage_of_original: int = 50,
+                     negative_prompt: str = "",
+                     model_name,
+                     num_images=4,
+                     steps=25
+                     ):
+        if model_name is None:
+            # Get a list of the checkpoints
+            model_name = get_checkpoints()
+            # Check if there are any checkpoints available
+            if not model_name:
+                # send a message to the user that there are no checkpoints and break the command
+                await ctx.respond("There are no checkpoints available to use for generating images. Try downloading a "
+                                  "model and placing it in the checkpoints folder.")
+                return
+            else:
+                model_name = model_name[0]
+        model_path = os.path.join(os.getcwd(), "models/checkpoints/" + model_name + ".safetensors")
+        print(model_path)
+
+        # Get the default settings for the model chosen
+        with open('core/resources/model_settings.csv', encoding='UTF-8') as csv_file:
+            model_data = list(csv.reader(csv_file, delimiter='|'))
+            for row in model_data:
+                if row[0] == model_name:
+                    cfg_scale = int(row[1])
+                    sampler_name = row[2]
+                    clip_skip = row[3]
+                    break
+                else:
+                    cfg_scale = 2
+                    sampler_name = "DPM++ 2M Karras"
+                    clip_skip = 1
+        csv_file.close()
+
+        # get a funny message
+        funny_text = funny_message()
+
+        acknowledgement = await ctx.respond(f"**{funny_text}**\nGenerating {num_images} images for you!")
+        # Send the request to the queue
+        await core.queueHandler.add_request(funny_text, acknowledgement, "img2img", prompt, negative_prompt,
+                                            model_path, num_images, steps, cfg_scale, sampler_name,
+                                            clip_skip, attached_image, percentage_of_original)
+        print(f"Added request to queue: {prompt}, {negative_prompt}, {num_images}, {steps},"
+              f" {cfg_scale}, {sampler_name}, {percentage_of_original}")
+
+    @commands.slash_command(description='Upscale an image!', guild_only=True)
+    @option(
+        'attached_image',
+        description='The image to upscale.',
+        required=True
+    )
+    @option(
+        'upscaler_name',
+        str,
+        choices=['R-ESRGAN AnimeVideo', 'R-ESRGAN 2x+', 'R-ESRGAN 4x+', 'R-ESRGAN 4x+ Anime 6B',
+                 'R-ESRGAN General 4xV3', 'R-ESRGAN General WDN 4xV3'],
+        description='The upscaler to use.',
+        required=True
+    )
+    @option(
+        'scale',
+        int,
+        choices=[2, 4],
+        description='The amount to upscale the image by.',
+        required=True
+    )
+    async def upscale(self, ctx: discord.ApplicationContext,
+                      attached_image: discord.Attachment,
+                      upscaler_name,
+                      scale
+                      ):
+        funny_text = funny_message()
+        acknowledgement = await ctx.respond(f"**{funny_text}**\nUpscaling the image for you!")
+        # Send the request to the queue
+        await core.queueHandler.add_request(funny_text, acknowledgement, "image_upscale", upscaler_name, scale,
+                                            attached_image)
+        print(f"Added request to queue: {upscaler_name}, {scale}")
+
+    @commands.slash_command(description='Download a CivitAI model!', guild_only=True)
+    @option(
+        'model_url',
+        str,
+        description='The URL to download the model from.',
+        required=True
+    )
+    @option(
+        'model_name',
+        str,
+        description='The name of the model.',
+        required=True
+    )
+    @option(
+        'model_type',
+        str,
+        choices=['checkpoints', 'loras', 'vae'],
+        description='The type of model to download.',
+        required=True
+    )
+    @option(
+        "api_key",
+        str,
+        description="The API key to use for downloading the model.",
+        required=False
+    )
+    async def download(self, ctx: discord.ApplicationContext,
+                       model_url,
+                       model_name,
+                       model_type,
+                       api_key: str = ""
+                       ):
+        print(ctx.user.roles)
+        # get a funny message
+        funny_text = funny_message()
+
+        acknowledgement = await ctx.respond(f"**{funny_text}**\nDownloading the model for you!")
+        # Send the request to the queue
+        await core.queueHandler.add_request(funny_text, acknowledgement, "model_download", model_url, model_name,
+                                            model_type, api_key)
+        print(f"Added request to queue: {model_url}, {model_name}, {model_type}")
+
+    @commands.slash_command(description="Set default model settings", guild_only=True)
+    @option(
+        'model_name',
+        str,
+        description='The name of the model.',
+        required=True,
+        autocomplete=checkpoints_autocomplete
+    )
+    @option(
+        'cfg_scale',
+        int,
+        min_value=1,
+        max_value=10,
+        description='Set the CFG scale for the model.',
+        required=True
+    )
+    @option(
+        'sampler_name',
+        str,
+        description='Set the sampler name for the model.',
+        required=True,
+        autocomplete=sampler_autocomplete
+    )
+    @option(
+        'clip_skip',
+        int,
+        min_value=1,
+        max_value=10,
+        description='Set the recommended clip skip for the model.',
+        required=True
+    )
+    async def update_settings(self, ctx: discord.ApplicationContext,
+                              model_name,
+                              cfg_scale,
+                              sampler_name,
+                              clip_skip
+                              ):
+        model_exists = False
+        with open('core/resources/model_settings.csv', encoding='UTF-8') as csv_file:
+            model_data = list(csv.reader(csv_file, delimiter='|'))
+            for row in model_data:
+                if row[0] == model_name:
+                    model_exists = True
+        if not model_exists:
+            with open('core/resources/model_settings.csv', 'a', newline='', encoding='UTF-8') as csv_file:
+                writer = csv.writer(csv_file, delimiter='|')
+                writer.writerow([model_name, cfg_scale, sampler_name, clip_skip])
+            await ctx.respond(
+                f"Model settings for {model_name} have been set to: CFG Scale: {cfg_scale}, "
+                f"Sampler Name: {sampler_name}, Clip Skip: {clip_skip}")
+            csv_file.close()
+        else:
+            # If the model name exists, remove the row and add the new settings
+            with open('core/resources/model_settings.csv', 'r', encoding='UTF-8') as csv_file:
+                model_data = list(csv.reader(csv_file, delimiter='|'))
+                for row in model_data:
+                    if row[0] == model_name:
+                        model_data.remove(row)
+            with open('core/resources/model_settings.csv', 'w', newline='', encoding='UTF-8') as csv_file:
+                writer = csv.writer(csv_file, delimiter='|')
+                writer.writerows(model_data)
+                writer.writerow([model_name, cfg_scale, sampler_name, clip_skip])
+                await ctx.respond(
+                    f"Model settings for {model_name} have been updated to: CFG Scale: {cfg_scale}, "
+                    f"Sampler Name: {sampler_name}, Clip Skip: {clip_skip}")
+
+            csv_file.close()
+
+
+def setup(bot):
+    bot.add_cog(GenerateCog(bot))
