@@ -22,7 +22,8 @@ The bot also features funny quotes from movies, tv shows, and games from my pers
 
 1. Clone the repository
 2. Edit the ".env" file to include your bot token
-3. Run `docker-compose up -d`
+3. Run `docker compose build`
+4. Run `docker compose up -d`
 
 ### Manual with virtual environment (Second best)
 
@@ -45,9 +46,9 @@ The bot also features funny quotes from movies, tv shows, and games from my pers
 #### First Run
 1. If using SDXL, download the [sdxl-vae-fp16-fix.pt](https://huggingface.co/madebyollin/sdxl-vae-fp16-fix) file and put it in models/vae/ folder.  
 2. Run the bot and use the `/download` command to download a model from CivitAI.
-3. Fill in the URL of the model, the desired file name, and the model type.  **If it is an sdxl model, make sure the name you enter includes 'sdxl' in it.**
+3. Fill in the URL of the model, the desired file name, and the model type.  **If it is an SDXL model, make sure the name you enter includes 'sdxl' in it.**
 4. If the model requires an API key from CivitAI, it will return with an error.  Rerun the command and add your api key in the optional field.  You can find how to get an API key [here](https://education.civitai.com/civitais-guide-to-downloading-via-api/).
-4. Run the `/update_settings` command to set the recommended settings for the model.  You will select the model from the dropdown, set the recommended CFG scale, Sampler name, and Clip Skip settings.
+5. Run the `/update_settings` command to set the recommended settings for the model.  You will select the model from the dropdown, set the recommended CFG scale, Sampler name, and Clip Skip settings.
 
 #### Normal Usage
 #### Text2Image

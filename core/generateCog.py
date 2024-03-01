@@ -337,7 +337,7 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
     @option(
         'upscaler_name',
         str,
-        choices=['R-ESRGAN AnimeVideo', 'R-ESRGAN 2x+', 'R-ESRGAN 4x+', 'R-ESRGAN 4x+ Anime 6B',
+        choices=['R-ESRGAN AnimeVideo', 'R-ESRGAN 2x+', 'R-ESRGAN 4x+', 'R-ESRGAN 4x+ Anime6B',
                  'R-ESRGAN General 4xV3', 'R-ESRGAN General WDN 4xV3'],
         description='The upscaler to use.',
         required=True

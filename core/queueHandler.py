@@ -69,8 +69,8 @@ def form_message(funny_text, message_args):
 @tasks.loop(seconds=1)
 async def queue_loop():
     global queue_processing
-    if not command_queue.empty():
-        try:
+    try:
+        if not command_queue.empty():
             request = await command_queue.get()
             queue_processing = True
             funny_text, acknowledgement, gen_type, args = request
@@ -152,10 +152,13 @@ async def queue_loop():
             await acknowledgement.edit_original_response(content=message, files=file_list)
             queue_processing = False
             del file_list, acknowledgement
-        except Exception as e:
-            error_message = "I'm sorry, I couldn't generate the images for you.\n" + str(e)
-            print(e)
-            await acknowledgement.edit_original_response(content=error_message)
-            queue_processing = False
-            del file_list, acknowledgement
+    except Exception as e:
+        error_message = "I'm sorry, I couldn't generate the images for you.\n" + str(e)
+        print(e)
+        await acknowledgement.edit_original_response(content=error_message)
+        queue_processing = False
+        del acknowledgement
+        # If there is an error, clear the item from the queue and continue
+        command_queue.task_done()
+
 
