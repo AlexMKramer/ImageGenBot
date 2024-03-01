@@ -22,25 +22,31 @@ The bot also features funny quotes from movies, tv shows, and games from my pers
 
 1. Clone the repository
 2. Edit the ".env" file to include your bot token
-3. Run `docker compose build`
-4. Run `docker compose up -d`
+3. Run `git update-index --assume-unchanged .env` --If anyone has a better solution that this, let me know!
+4. Run `git update-index --assume-unchanged core/resources/model_settings.csv` --If anyone has a better solution that this, let me know!
+5. Run `docker compose build`
+6. Run `docker compose up -d`
 
 ### Manual with virtual environment (Second best)
 
 1. Clone the repository
 2. Edit the ".env" file to include your bot token
-3. Run `python -m venv venv`
-4. Run `source venv/bin/activate`
-5. Run `pip install -r requirements.txt`
-6. Run `deactivate`
-7. Run `venv/bin/python main.py`
+3. Run `git update-index --assume-unchanged .env` --If anyone has a better solution that this, let me know!
+4. Run `git update-index --assume-unchanged core/resources/model_settings.csv` --If anyone has a better solution that this, let me know!
+5. Run `python -m venv venv`
+6. Run `source venv/bin/activate`
+7. Run `pip install -r requirements.txt`
+8. Run `deactivate`
+9. Run `venv/bin/python main.py`
 
 ### Manual without virtual environment
 
 1. Clone the repository
 2. Edit the ".env" file to include your bot token
-3. Run `pip install -r requirements.txt`
-4. Run `python main.py`
+3. Run `git update-index --assume-unchanged .env` --If anyone has a better solution that this, let me know!
+4. Run `git update-index --assume-unchanged core/resources/model_settings.csv` --If anyone has a better solution that this, let me know!
+5. Run `pip install -r requirements.txt`
+6. Run `python main.py`
 
 ### Usage
 #### First Run
