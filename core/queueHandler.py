@@ -69,6 +69,100 @@ def form_message(funny_text, message_args):
 @tasks.loop(seconds=1)
 async def queue_loop():
     global queue_processing
+    while True:
+        try:
+            # if not command_queue.empty():
+            # try:
+            if not command_queue.empty():
+                request = await command_queue.get()
+                queue_processing = True
+                funny_text, acknowledgement, gen_type, args = request
+                await acknowledgement.edit_original_response(content=f'**{funny_text}**\nYour request is being processed!')
+                loop = asyncio.get_event_loop()
+                if gen_type == "txt2img":
+                    print(args)
+                    prompt, negative_prompt, model_path, num_images, height, width, steps, cfg_scale, sampler_name, clip_skip = args
+                    file_list = await loop.run_in_executor(None, core.auto1111.txt2img, prompt, negative_prompt, model_path,
+                                                           num_images, height, width, steps, cfg_scale, sampler_name,
+                                                           clip_skip)
+                    # get model name from model path
+                    model_name = model_path.split("/")[-1]
+                    model_name = model_name.split(".")[0]
+                    message_args = {"Prompt": prompt, "Negative Prompt": negative_prompt, "Model Name": model_name,
+                                    "Height": height, "Width": width, "Steps": steps, "CFG Scale": cfg_scale,
+                                    "Sampler Name": sampler_name}
+                    message = form_message(funny_text, message_args)
+
+                elif gen_type == "img2img":
+                    print(args)
+                    (prompt, negative_prompt, model_path, num_images, steps, cfg_scale, sampler_name,
+                     clip_skip, attached_image, percent_of_original) = args
+
+                    # save the attached image to a file
+                    attached_image = io.BytesIO(await attached_image.read())
+                    attached_image = Image.open(attached_image)
+                    width, height = attached_image.size
+                    aspect_ratio = height / width
+                    print(f"Image aspect ratio: {aspect_ratio}")
+
+                    closest_option = min(height_width_option, key=lambda option: abs(option["aspect_ratio"] - aspect_ratio))
+
+                    width = closest_option["width"]
+                    height = closest_option["height"]
+
+                    attached_image.resize((width, height), Image.LANCZOS)
+                    attached_image.save("attached_image.png")
+
+                    file_list = await loop.run_in_executor(None, core.auto1111.img2img, prompt, negative_prompt, model_path,
+                                                           num_images, height, width, steps, cfg_scale, sampler_name,
+                                                           clip_skip, percent_of_original)
+                    # get model name from model path
+                    model_name = model_path.split("/")[-1]
+                    model_name = model_name.split(".")[0]
+                    message_args = {"Prompt": prompt, "Negative Prompt": negative_prompt, "Model Name": model_name,
+                                    "Height": height, "Width": width, "Steps": steps, "CFG Scale": cfg_scale,
+                                    "Sampler Name": sampler_name, "Percent of Original Image": percent_of_original}
+                    message = form_message(funny_text, message_args)
+
+                elif gen_type == 'image_upscale':
+                    print(args)
+                    (model_name, scale, attached_image) = args
+                    # save the attached image to a file
+                    attached_image = io.BytesIO(await attached_image.read())
+                    attached_image = Image.open(attached_image)
+                    attached_image.save("attached_image.png")
+
+                    file_list = await loop.run_in_executor(None, core.auto1111.image_upscale, model_name, scale)
+                    message_args = {"Model Name": model_name, "Scale": scale}
+                    message = form_message(funny_text, message_args)
+
+                elif gen_type == "model_download":
+                    model_url, model_name, model_type, api_key = args
+                    file_status = await loop.run_in_executor(None, core.auto1111.model_download, model_url, model_name,
+                                                             model_type, api_key)
+                    if file_status is True:
+                        message = (f"Model {model_name} downloaded successfully!\n Run /update_settings to set the CFG and "
+                                   f"Sampler")
+                        await acknowledgement.edit_original_response(content=message)
+                        print(f"Model {model_name} downloaded successfully!")
+                        queue_processing = False
+                        return
+                    else:
+                        print(f"Model download failed")
+                        raise ValueError(f"Model download failed. Error: {file_status}")
+                else:
+                    raise ValueError("Invalid command type")
+                await acknowledgement.edit_original_response(content=message, files=file_list)
+                queue_processing = False
+                del file_list, acknowledgement
+        except Exception as e:
+            error_message = "I'm sorry, I couldn't generate the images for you.\n" + str(e)
+            print(e)
+            await acknowledgement.edit_original_response(content=error_message)
+            queue_processing = False
+            del file_list, acknowledgement
+        finally:
+            await asyncio.sleep(1)
     try:
         if not command_queue.empty():
             request = await command_queue.get()
@@ -160,5 +254,4 @@ async def queue_loop():
         del acknowledgement
         # If there is an error, clear the item from the queue and continue
         command_queue.task_done()
-
 

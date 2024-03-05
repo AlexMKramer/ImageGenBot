@@ -2,130 +2,33 @@ import discord
 from discord import option
 from discord.ext import commands
 import os
-import random
 import csv
 
 import core.auto1111
 import core.queueHandler
+import core.utils as utils
 
 wait_message = []
 
 
-def funny_message():
-    with open('core/resources/messages.csv', encoding='UTF-8') as csv_file:
-        message_data = list(csv.reader(csv_file, delimiter='|'))
-        for row in message_data:
-            wait_message.append(row[0])
-    wait_message_count = len(wait_message) - 1
-    text = wait_message[random.randint(0, wait_message_count)]
-    return text
-
-
-# Search lora folder
-def get_loras():
-    models_folder_path = os.path.join(os.getcwd(), "models/")
-    for dirpath, dirnames, filenames in os.walk(models_folder_path):
-        subfolder_name = 'loras'
-        # Check if the target subfolder is in the current directory
-        if subfolder_name in dirnames:
-            subfolder_path = os.path.join(dirpath, subfolder_name)
-
-            # List files within the target subfolder
-            subfolder_files = [file for file in os.listdir(subfolder_path) if
-                               os.path.isfile(os.path.join(subfolder_path, file))]
-            matching_files = [os.path.splitext(loras)[0] for loras in subfolder_files]
-            # remove place_loras_here.txt file from the list
-            if 'place_loras_here' in matching_files:
-                matching_files.remove('place_loras_here')
-            return sorted(matching_files)
-    # If the target subfolder is not found
-    return []
-
-
-# Setup models autocomplete
+# Setup loras autocomplete
 async def loras_autocomplete(ctx: discord.AutocompleteContext):
-    loras = get_loras()
+    loras = utils.get_loras()
     return [lora for lora in loras if lora.startswith(ctx.value.lower())]
 
 
-# Search lora folder
-def get_checkpoints():
-    models_folder_path = os.path.join(os.getcwd(), "models/")
-    for dirpath, dirnames, filenames in os.walk(models_folder_path):
-        subfolder_name = 'checkpoints'
-        # Check if the target subfolder is in the current directory
-        if subfolder_name in dirnames:
-            subfolder_path = os.path.join(dirpath, subfolder_name)
-
-            # List files within the target subfolder
-            subfolder_files = [file for file in os.listdir(subfolder_path) if
-                               os.path.isfile(os.path.join(subfolder_path, file))]
-            matching_files = [os.path.splitext(loras)[0] for loras in subfolder_files]
-            # remove place_checkpoints_here.txt file from the list
-            if 'place_checkpoints_here' in matching_files:
-                matching_files.remove('place_checkpoints_here')
-            return sorted(matching_files)
-    # If the target subfolder is not found
-    return []
-
-
-# Setup lora autocomplete
+# Setup checkpoint autocomplete
 async def checkpoints_autocomplete(ctx: discord.AutocompleteContext):
-    checkpoints = get_checkpoints()
+    checkpoints = utils.get_checkpoints()
     return [checkpoint for checkpoint in checkpoints if checkpoint.startswith(ctx.value.lower())]
 
 
-height_width_option = [
-    {"height": 512, "width": 512, "aspect_ratio": 1},
-    {"height": 768, "width": 768, "aspect_ratio": 1},
-    {"height": 1024, "width": 1024, "aspect_ratio": 1},
-    {"height": 1152, "width": 896, "aspect_ratio": 1.2857142857142858},
-    {"height": 896, "width": 1152, "aspect_ratio": 0.7777777777777778},
-    {"height": 1216, "width": 832, "aspect_ratio": 1.4615384615384615},
-    {"height": 832, "width": 1216, "aspect_ratio": 0.6842105263157895},
-    {"height": 1344, "width": 768, "aspect_ratio": 1.75},
-    {"height": 768, "width": 1344, "aspect_ratio": 0.5714285714285714},
-    {"height": 1536, "width": 640, "aspect_ratio": 2.4},
-    {"height": 640, "width": 1536, "aspect_ratio": 0.4166666666666667},
-]
-
-
 async def height_width_autocomplete(ctx: discord.AutocompleteContext):
-    return [f"{hw['height']} {hw['width']}" for hw in height_width_option]
-
-
-sampler_options = [
-    'DPM++ 2M Karras',
-    'DPM++ SDE Karras',
-    'DPM++ 2M SDE Exponential',
-    'DPM++ 2M SDE Karras',
-    'Euler a',
-    'Euler',
-    'LMS',
-    'Heun',
-    'DPM2',
-    'DPM2 a',
-    'DPM++ 2S a',
-    'DPM++ 2M',
-    'DPM++ SDE',
-    'DPM++ 2M SDE',
-    'DPM++ 2M SDE Heun',
-    'DPM++ 2M SDE Heun Karras',
-    'DPM++ 2M SDE Heun Exponential',
-    'DPM++ 3M SDE',
-    'DPM++ 3M SDE Karras',
-    'DPM++ 3M SDE Exponential',
-    'DPM fast',
-    'DPM adaptive',
-    'LMS Karras',
-    'DPM2 Karras',
-    'DPM2 a Karras',
-    'DPM++ 2S a Karras'
-    ]
+    return [f"{hw['height']} {hw['width']}" for hw in utils.height_width_option]
 
 
 async def sampler_autocomplete(ctx: discord.AutocompleteContext):
-    return [sampler for sampler in sampler_options if sampler.startswith(ctx.value.lower())]
+    return [sampler for sampler in utils.sampler_options if sampler.startswith(ctx.value.lower())]
 
 
 # set up the main commands used by the bot
@@ -188,7 +91,7 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
                    ):
         if model_name is None:
             # Get a list of the checkpoints
-            model_name = get_checkpoints()
+            model_name = utils.get_checkpoints()
             # Check if there are any checkpoints available
             if not model_name:
                 # send a message to the user that there are no checkpoints and break the command
@@ -206,22 +109,10 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
         width = int(width)
 
         # Get the default settings for the model chosen
-        with open('core/resources/model_settings.csv', encoding='UTF-8') as csv_file:
-            model_data = list(csv.reader(csv_file, delimiter='|'))
-            # Check if the model name exists in the settings file
-            for row in model_data:
-                if row[0] == model_name:
-                    cfg_scale = int(row[1])
-                    sampler_name = row[2]
-                    clip_skip = row[3]
-                    break
-                else:
-                    cfg_scale = 2
-                    sampler_name = "DPM++ 2M Karras"
-                    clip_skip = 1
+        cfg_scale, sampler_name, clip_skip = utils.get_model_settings(model_name)
 
         # get a funny message
-        funny_text = funny_message()
+        funny_text = utils.funny_message()
 
         acknowledgement = await ctx.respond(f"**{funny_text}**\nGenerating {num_images} images for you!")
         # Send the request to the queue
@@ -290,7 +181,7 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
                      ):
         if model_name is None:
             # Get a list of the checkpoints
-            model_name = get_checkpoints()
+            model_name = utils.get_checkpoints()
             # Check if there are any checkpoints available
             if not model_name:
                 # send a message to the user that there are no checkpoints and break the command
@@ -303,22 +194,10 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
         print(model_path)
 
         # Get the default settings for the model chosen
-        with open('core/resources/model_settings.csv', encoding='UTF-8') as csv_file:
-            model_data = list(csv.reader(csv_file, delimiter='|'))
-            for row in model_data:
-                if row[0] == model_name:
-                    cfg_scale = int(row[1])
-                    sampler_name = row[2]
-                    clip_skip = row[3]
-                    break
-                else:
-                    cfg_scale = 2
-                    sampler_name = "DPM++ 2M Karras"
-                    clip_skip = 1
-        csv_file.close()
+        cfg_scale, sampler_name, clip_skip = utils.get_model_settings(model_name)
 
         # get a funny message
-        funny_text = funny_message()
+        funny_text = utils.funny_message()
 
         acknowledgement = await ctx.respond(f"**{funny_text}**\nGenerating {num_images} images for you!")
         # Send the request to the queue
@@ -354,7 +233,7 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
                       upscaler_name,
                       scale
                       ):
-        funny_text = funny_message()
+        funny_text = utils.funny_message()
         acknowledgement = await ctx.respond(f"**{funny_text}**\nUpscaling the image for you!")
         # Send the request to the queue
         await core.queueHandler.add_request(funny_text, acknowledgement, "image_upscale", upscaler_name, scale,
@@ -395,7 +274,7 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
                        ):
         print(ctx.user.roles)
         # get a funny message
-        funny_text = funny_message()
+        funny_text = utils.funny_message()
 
         acknowledgement = await ctx.respond(f"**{funny_text}**\nDownloading the model for you!")
         # Send the request to the queue

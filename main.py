@@ -10,6 +10,11 @@ bot.auto_sync_commands = True
 intents = discord.Intents.default()
 bot.load_extension("core.generateCog")
 
+# load all custom cogs
+for filename in os.listdir('./custom_cogs'):
+    if filename.endswith('.py'):
+        bot.load_extension(f'custom_cogs.{filename[:-3]}')
+
 
 @bot.event
 async def on_guild_join(guild):
