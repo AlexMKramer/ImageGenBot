@@ -75,6 +75,23 @@ The bot also features funny quotes from movies, tv shows, and games from my pers
 3. Select the Upscaler you want to use.
 4. Choose whether you want to upscale it by either 2 or 4 times.
 
+## Custom Cogs
+You can find an example of a custom cog [here](https://github.com/AlexMKramer/MusicInterpreterCog).
+
+The setup of custom cogs will depend on how you have installed the bot.  
+
+If you are using Docker, you will need to add the requirements of the custom cogs to the requirements.txt file and rebuild the container.  
+
+If you are using a virtual environment, you will need to install the requirements of the custom cogs in the virtual environment and run the bot as normal.
+
+`source venv/bin/activate`
+
+`pip install -r custom_cog_requirements.txt`
+
+If you arent using either, you can just install the requirements of the custom cogs as normal.
+
+`pip install -r custom_cog_requirements.txt`
+
 ## Disclaimer
 I am not responsible for any misuse of this bot.  It is meant to be used for fun and learning.  Please do not use it to generate harmful or inappropriate images.  I will not be held responsible for any misuse of this bot.  Please use it responsibly.
 
