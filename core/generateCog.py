@@ -325,6 +325,7 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
             for row in model_data:
                 if row[0] == model_name:
                     model_exists = True
+                    break
         if not model_exists:
             with open('core/resources/model_settings.csv', 'a', newline='', encoding='UTF-8') as csv_file:
                 writer = csv.writer(csv_file, delimiter='|')

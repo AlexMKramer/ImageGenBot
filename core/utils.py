@@ -105,6 +105,7 @@ def get_model_settings(model_name):
     with open('core/resources/model_settings.csv', encoding='UTF-8') as csv_file:
         model_data = list(csv.reader(csv_file, delimiter='|'))
         # Check if the model name exists in the settings file
+        model_found = False
         for row in model_data:
             if row[0] == model_name:
                 # Check that there are no empty values in the row for rows 1, 2, and 3
@@ -121,15 +122,16 @@ def get_model_settings(model_name):
                 else:
                     clip_skip = row[3]
                 csv_file.close()
+                model_found = True
                 break
-            else:
-                csv_file.close()
-                # If the model name does not exist in the settings file, write the default settings to the file
-                with open('core/resources/model_settings.csv', 'a', newline='', encoding='UTF-8') as csv_file_append:
-                    writer = csv.writer(csv_file_append, delimiter='|')
-                    writer.writerow([model_name, '2', 'DPM++ 2M Karras', '1'])
-                csv_file_append.close()
-                cfg_scale = 2
-                sampler_name = "DPM++ 2M Karras"
-                clip_skip = 1
+        if not model_found:
+            csv_file.close()
+            # If the model name does not exist in the settings file, write the default settings to the file
+            with open('core/resources/model_settings.csv', 'a', newline='', encoding='UTF-8') as csv_file_append:
+                writer = csv.writer(csv_file_append, delimiter='|')
+                writer.writerow([model_name, '2', 'DPM++ 2M Karras', '1'])
+            csv_file_append.close()
+            cfg_scale = 2
+            sampler_name = "DPM++ 2M Karras"
+            clip_skip = 1
         return cfg_scale, sampler_name, clip_skip
