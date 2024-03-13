@@ -207,7 +207,7 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
         print(model_path)
 
         # Check if the model is an SDXL model and if a controlnet is specified
-        if "sdxl" in model_name and controlnet != "":
+        if ("sdxl" in model_name) and (controlnet != ""):
             await ctx.respond("You cannot use a controlnet with an SDXL model.")
             return
 
