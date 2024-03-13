@@ -273,7 +273,7 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
     @option(
         'model_type',
         str,
-        choices=['checkpoints', 'loras', 'vae'],
+        choices=['checkpoints', 'loras', 'vae', 'controlnets'],
         description='The type of model to download.',
         required=True
     )
