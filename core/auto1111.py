@@ -143,7 +143,7 @@ def controlnet(prompt,
     file_list = [discord.File(file_path) for file_path in file_paths]
     pipe.set_vae(None)
     del pipe
-    print("Finished generating image2images.")
+    print("Finished generating controlnet images.")
     return file_list
 
 
