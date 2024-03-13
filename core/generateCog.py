@@ -206,7 +206,8 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
         model_path = os.path.join(os.getcwd(), "models/checkpoints/" + model_name + ".safetensors")
         print(model_path)
 
-        if "sdxl" in model_name & controlnet != "":
+        # Check if the model is an SDXL model and if a controlnet is specified
+        if "sdxl" in model_name and controlnet != "":
             await ctx.respond("You cannot use a controlnet with an SDXL model.")
             return
 
