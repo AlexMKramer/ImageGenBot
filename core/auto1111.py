@@ -69,7 +69,7 @@ def img2img(prompt,
     # If a controlnet is specified, run the image through the controlnet first
     if controlnet:
         controlnet_path = os.path.join(os.getcwd(), "models/controlnets/" + controlnet)
-        controlnet_model = ControlNetModel(model=controlnet_path, image=Image.open("attached_image.png"))
+        controlnet_model = ControlNetModel(model_path=controlnet_path, image="attached_image.png")
         pipe = StableDiffusionPipeline(model_path, controlnet=controlnet_model)
         print(f"Using {controlnet} controlnet to process the image")
     # check if the model path has 'sdxl' in it
