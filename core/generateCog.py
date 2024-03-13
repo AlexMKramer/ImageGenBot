@@ -190,7 +190,7 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
                      model_name,
                      num_images=4,
                      steps=25,
-                     controlnet: str = ""
+                     controlnet
                      ):
         if model_name is None:
             # Get a list of the checkpoints
@@ -206,9 +206,10 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
         model_path = os.path.join(os.getcwd(), "models/checkpoints/" + model_name + ".safetensors")
         print(model_path)
 
-        # Check if the model is an SDXL model and if a controlnet is specified
-        if ("sdxl" in model_name) and (controlnet != ""):
+        # Check if the model is an SDXL model and if a controlnet is specified do not allow the command to continue
+        if ("sdxl" in model_name) and (controlnet is not None):
             await ctx.respond("You cannot use a controlnet with an SDXL model.")
+            print(f"Model {model_name} is an SDXL model and controlnet {controlnet} was specified, breaking command.")
             return
 
         # Get the default settings for the model chosen

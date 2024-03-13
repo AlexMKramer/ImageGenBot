@@ -138,7 +138,10 @@ def model_download(model_url, model_name, model_type, api_key):
     try:
         download_folder = os.path.join(os.getcwd(), "models/" + model_type + "/")
         os.chdir(download_folder)
-        civit_download(model_url, model_name)
+        if api_key:
+            civit_download(model_url, model_name, api_key)
+        else:
+            civit_download(model_url, model_name)
         os.chdir(os.path.join(os.getcwd(), "../.."))
         print(f"Downloaded {model_name} model")
         return True
