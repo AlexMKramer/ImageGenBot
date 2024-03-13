@@ -31,6 +31,11 @@ async def sampler_autocomplete(ctx: discord.AutocompleteContext):
     return [sampler for sampler in utils.sampler_options if sampler.startswith(ctx.value.lower())]
 
 
+async def controlnets_autocomplete(ctx: discord.AutocompleteContext):
+    controlnets = utils.get_controlnets()
+    return [controlnet for controlnet in controlnets if controlnets.startswith(ctx.value.lower())]
+
+
 # set up the main commands used by the bot
 class GenerateCog(commands.Cog, name="Generate", description="Generate images from text"):
     ctx_parse = discord.ApplicationContext
@@ -169,6 +174,13 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
         description='The number of steps to take in the diffusion process.',
         required=False
     )
+    @option(
+        'controlnet',
+        str,
+        description='Choose the controlnet to use for generating the images with.',
+        required=False,
+        autocomplete=controlnets_autocomplete
+    )
     async def redraw(self, ctx: discord.ApplicationContext,
                      *,
                      prompt,
@@ -177,7 +189,8 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
                      negative_prompt: str = "",
                      model_name,
                      num_images=4,
-                     steps=25
+                     steps=25,
+                     controlnet: str = ""
                      ):
         if model_name is None:
             # Get a list of the checkpoints
@@ -193,6 +206,10 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
         model_path = os.path.join(os.getcwd(), "models/checkpoints/" + model_name + ".safetensors")
         print(model_path)
 
+        if "sdxl" in model_name & controlnet != "":
+            await ctx.respond("You cannot use a controlnet with an SDXL model.")
+            return
+
         # Get the default settings for the model chosen
         cfg_scale, sampler_name, clip_skip = utils.get_model_settings(model_name)
 
@@ -203,7 +220,7 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
         # Send the request to the queue
         await core.queueHandler.add_request(funny_text, acknowledgement, "img2img", prompt, negative_prompt,
                                             model_path, num_images, steps, cfg_scale, sampler_name,
-                                            clip_skip, attached_image, percentage_of_original)
+                                            clip_skip, attached_image, percentage_of_original, controlnet)
         print(f"Added request to queue: {prompt}, {negative_prompt}, {num_images}, {steps},"
               f" {cfg_scale}, {sampler_name}, {percentage_of_original}")
 

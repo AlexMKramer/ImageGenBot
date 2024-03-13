@@ -1,4 +1,4 @@
-from auto1111sdk import StableDiffusionPipeline, StableDiffusionXLPipeline, civit_download, download_realesrgan, RealEsrganPipeline
+from auto1111sdk import StableDiffusionPipeline, StableDiffusionXLPipeline, civit_download, download_realesrgan, RealEsrganPipeline, ControlNetModel
 import discord
 import os
 from PIL import Image
@@ -21,11 +21,10 @@ def txt2img(prompt,
     print(model_path)
     # check if the model path has 'sdxl' in it
     if "sdxl" in model_path:
-        if "sdxl" in model_path:
-            pipe = StableDiffusionXLPipeline(model_path, "--skip-torch-cuda-test --medvram", clip_skip)
-            pipe.set_vae(os.path.join(os.getcwd(), "models/vae/sdxl.vae.safetensors"))
-            pipe.weights_file = os.path.basename(model_path)
-            print("Using SDXL")
+        pipe = StableDiffusionXLPipeline(model_path, "--skip-torch-cuda-test --medvram", clip_skip)
+        pipe.set_vae(os.path.join(os.getcwd(), "models/vae/sdxl.vae.safetensors"))
+        pipe.weights_file = os.path.basename(model_path)
+        print("Using SDXL")
     else:
         pipe = StableDiffusionPipeline(model_path)
     output = pipe.generate_txt2img(prompt=prompt,
@@ -63,17 +62,25 @@ def img2img(prompt,
             cfg_scale,
             sampler_name,
             clip_skip,
-            percent_of_original
+            percent_of_original,
+            controlnet
             ):
     print(model_path)
+    # If a controlnet is specified, run the image through the controlnet first
+    if controlnet:
+        controlnet_path = os.path.join(os.getcwd(), "models/controlnets/" + controlnet)
+        controlnet_model = ControlNetModel(model=controlnet_path, image=Image.open("attached_image.png"))
+        pipe = StableDiffusionPipeline(model_path, controlnet=controlnet_model)
+        print(f"Using {controlnet} controlnet to process the image")
     # check if the model path has 'sdxl' in it
-    if "sdxl" in model_path:
+    elif "sdxl" in model_path:
         pipe = StableDiffusionXLPipeline(model_path, "--skip-torch-cuda-test --medvram", clip_skip)
         pipe.set_vae(os.path.join(os.getcwd(), "models/vae/sdxl.vae.safetensors"))
         pipe.weights_file = os.path.basename(model_path)
-        print("Using SDXL")
+        print(f"Using SDXL {model_path} model to process the image")
     else:
         pipe = StableDiffusionPipeline(model_path)
+        print(f"Using SD {model_path} model to process the image")
     output = pipe.generate_img2img(prompt=prompt,
                                    init_image=Image.open("attached_image.png"),
                                    negative_prompt=negative_prompt,

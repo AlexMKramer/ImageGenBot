@@ -70,7 +70,7 @@ def get_checkpoints():
             # List files within the target subfolder
             subfolder_files = [file for file in os.listdir(subfolder_path) if
                                os.path.isfile(os.path.join(subfolder_path, file))]
-            matching_files = [os.path.splitext(loras)[0] for loras in subfolder_files]
+            matching_files = [os.path.splitext(checkpoints)[0] for checkpoints in subfolder_files]
             # remove place_checkpoints_here.txt file from the list
             if 'place_checkpoints_here' in matching_files:
                 matching_files.remove('place_checkpoints_here')
@@ -95,6 +95,27 @@ def get_loras():
             # remove place_loras_here.txt file from the list
             if 'place_loras_here' in matching_files:
                 matching_files.remove('place_loras_here')
+            return sorted(matching_files)
+    # If the target subfolder is not found
+    return []
+
+
+# Search controlnets folder
+def get_controlnets():
+    models_folder_path = os.path.join(os.getcwd(), "models/")
+    for dirpath, dirnames, filenames in os.walk(models_folder_path):
+        subfolder_name = 'controlnets'
+        # Check if the target subfolder is in the current directory
+        if subfolder_name in dirnames:
+            subfolder_path = os.path.join(dirpath, subfolder_name)
+
+            # List files within the target subfolder
+            subfolder_files = [file for file in os.listdir(subfolder_path) if
+                               os.path.isfile(os.path.join(subfolder_path, file))]
+            matching_files = [os.path.splitext(controlnets)[0] for controlnets in subfolder_files]
+            # remove place_loras_here.txt file from the list
+            if 'place_controlnets_here' in matching_files:
+                matching_files.remove('place_controlnets_here')
             return sorted(matching_files)
     # If the target subfolder is not found
     return []
