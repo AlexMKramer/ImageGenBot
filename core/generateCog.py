@@ -23,6 +23,12 @@ async def checkpoints_autocomplete(ctx: discord.AutocompleteContext):
     return [checkpoint for checkpoint in checkpoints if checkpoint.startswith(ctx.value.lower())]
 
 
+# Setup checkpoint autocomplete
+async def checkpoints_not_sdxl_autocomplete(ctx: discord.AutocompleteContext):
+    checkpoints = utils.get_checkpoints()
+    return [checkpoint for checkpoint in checkpoints if (checkpoint.startswith(ctx.value.lower()) and ("sdxl" not in checkpoint))]
+
+
 async def height_width_autocomplete(ctx: discord.AutocompleteContext):
     return [f"{hw['height']} {hw['width']}" for hw in utils.height_width_option]
 
@@ -222,9 +228,98 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
         # Send the request to the queue
         await core.queueHandler.add_request(funny_text, acknowledgement, "img2img", prompt, negative_prompt,
                                             model_path, num_images, steps, cfg_scale, sampler_name,
-                                            clip_skip, attached_image, percentage_of_original, controlnet)
+                                            clip_skip, attached_image, percentage_of_original)
         print(f"Added request to queue: {prompt}, {negative_prompt}, {num_images}, {steps},"
               f" {cfg_scale}, {sampler_name}, {percentage_of_original}")
+
+    @commands.slash_command(description='Create images from an image!', guild_only=True)
+    @option(
+        'prompt',
+        str,
+        description='A prompt to condition the model with.',
+        required=True
+    )
+    @option(
+        'attached_image',
+        description='The image to condition the model with.',
+        required=True
+    )
+    @option(
+        'negative_prompt',
+        str,
+        description='A negative prompt to condition the model with.',
+        required=False
+    )
+    @option(
+        'model_name',
+        str,
+        description='Choose the checkpoint to use for generating the images with.',
+        required=False,
+        autocomplete=checkpoints_not_sdxl_autocomplete
+    )
+    @option(
+        'num_images',
+        int,
+        min_value=1,
+        max_value=4,
+        description='The number of images to generate up to 4.',
+        required=False
+    )
+    @option(
+        'steps',
+        int,
+        description='The number of steps to take in the diffusion process.',
+        required=False
+    )
+    @option(
+        'controlnet_name',
+        str,
+        description='Choose the controlnet to use for generating the images with.',
+        required=False,
+        autocomplete=controlnets_autocomplete
+    )
+    async def controlnet(self, ctx: discord.ApplicationContext,
+                         *,
+                         prompt,
+                         attached_image: discord.Attachment,
+                         negative_prompt: str = "",
+                         model_name,
+                         num_images=4,
+                         steps=25,
+                         controlnet_name
+                         ):
+        if model_name is None:
+            # Get a list of the checkpoints
+            model_name = utils.get_checkpoints()
+            # Check if there are any checkpoints available
+            if not model_name:
+                # send a message to the user that there are no checkpoints and break the command
+                await ctx.respond("There are no checkpoints available to use for generating images. Try downloading a "
+                                  "model and placing it in the checkpoints folder.")
+                return
+            else:
+                # If there are checkpoints available, use the first one that is not an SDXL model
+                for checkpoint in model_name:
+                    if "sdxl" not in checkpoint:
+                        model_name = checkpoint
+                        break
+
+        model_path = os.path.join(os.getcwd(), "models/checkpoints/" + model_name + ".safetensors")
+        print(model_path)
+
+        # Get the default settings for the model chosen
+        cfg_scale, sampler_name, clip_skip = utils.get_model_settings(model_name)
+
+        # get a funny message
+        funny_text = utils.funny_message()
+
+        acknowledgement = await ctx.respond(f"**{funny_text}**\nGenerating {num_images} images for you!")
+        # Send the request to the queue
+        await core.queueHandler.add_request(funny_text, acknowledgement, "controlnet", prompt, negative_prompt,
+                                            model_path, num_images, steps, cfg_scale, sampler_name,
+                                            clip_skip, attached_image, controlnet_name)
+        print(f"Added request to queue: {prompt}, {negative_prompt}, {num_images}, {steps},"
+              f" {cfg_scale}, {sampler_name}, {controlnet_name}")
 
     @commands.slash_command(description='Upscale an image!', guild_only=True)
     @option(

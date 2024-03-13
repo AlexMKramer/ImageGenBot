@@ -93,7 +93,7 @@ async def queue_loop():
             elif gen_type == "img2img":
                 print(args)
                 (prompt, negative_prompt, model_path, num_images, steps, cfg_scale, sampler_name,
-                 clip_skip, attached_image, percent_of_original, controlnet) = args
+                 clip_skip, attached_image, percent_of_original) = args
 
                 # save the attached image to a file
                 attached_image = io.BytesIO(await attached_image.read())
@@ -112,14 +112,44 @@ async def queue_loop():
 
                 file_list = await loop.run_in_executor(None, core.auto1111.img2img, prompt, negative_prompt, model_path,
                                                        num_images, height, width, steps, cfg_scale, sampler_name,
-                                                       clip_skip, percent_of_original, controlnet)
+                                                       clip_skip, percent_of_original)
                 # get model name from model path
                 model_name = model_path.split("/")[-1]
                 model_name = model_name.split(".")[0]
                 message_args = {"Prompt": prompt, "Negative Prompt": negative_prompt, "Model Name": model_name,
                                 "Height": height, "Width": width, "Steps": steps, "CFG Scale": cfg_scale,
-                                "Sampler Name": sampler_name, "Percent of Original Image": percent_of_original,
-                                "Controlnet": controlnet}
+                                "Sampler Name": sampler_name, "Percent of Original Image": percent_of_original}
+                message = form_message(funny_text, message_args)
+
+            elif gen_type == "controlnet":
+                print(args)
+                (prompt, negative_prompt, model_path, num_images, steps, cfg_scale, sampler_name,
+                 clip_skip, attached_image, controlnet_name) = args
+
+                # save the attached image to a file
+                attached_image = io.BytesIO(await attached_image.read())
+                attached_image = Image.open(attached_image)
+                width, height = attached_image.size
+                aspect_ratio = height / width
+                print(f"Image aspect ratio: {aspect_ratio}")
+
+                closest_option = min(height_width_option, key=lambda option: abs(option["aspect_ratio"] - aspect_ratio))
+
+                width = closest_option["width"]
+                height = closest_option["height"]
+
+                attached_image.resize((width, height), Image.LANCZOS)
+                attached_image.save("attached_image.png")
+
+                file_list = await loop.run_in_executor(None, core.auto1111.controlnet, prompt, negative_prompt,
+                                                       model_path, num_images, height, width, steps, cfg_scale,
+                                                       sampler_name, clip_skip, controlnet_name)
+                # get model name from model path
+                model_name = model_path.split("/")[-1]
+                model_name = model_name.split(".")[0]
+                message_args = {"Prompt": prompt, "Negative Prompt": negative_prompt, "Model Name": model_name,
+                                "Height": height, "Width": width, "Steps": steps, "CFG Scale": cfg_scale,
+                                "Sampler Name": sampler_name, "Controlnet": controlnet_name}
                 message = form_message(funny_text, message_args)
 
             elif gen_type == 'image_upscale':
