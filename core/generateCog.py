@@ -33,7 +33,7 @@ async def sampler_autocomplete(ctx: discord.AutocompleteContext):
 
 async def controlnets_autocomplete(ctx: discord.AutocompleteContext):
     controlnets = utils.get_controlnets()
-    return [controlnet for controlnet in controlnets if controlnets.startswith(ctx.value.lower())]
+    return [controlnet for controlnet in controlnets if controlnet.startswith(ctx.value.lower())]
 
 
 # set up the main commands used by the bot
