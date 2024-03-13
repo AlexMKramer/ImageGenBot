@@ -119,7 +119,7 @@ def controlnet(prompt,
     # If a controlnet is specified, run the image through the controlnet first
     controlnet_path = os.path.join(os.getcwd(), "models/controlnets/" + controlnet_name)
     print(controlnet_path)
-    controlnet_model = ControlNetModel(model_path=controlnet_path, image="attached_image.png")
+    controlnet_model = ControlNetModel(controlnet_path, image="attached_image.png")
     pipe = StableDiffusionPipeline(model_path, controlnet=controlnet_model, clip_skip=clip_skip)
     print(f"Using {controlnet_name} to process the image")
     output = pipe.generate_txt2img(prompt=prompt,
