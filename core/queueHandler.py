@@ -74,7 +74,7 @@ async def queue_loop():
             request = await command_queue.get()
             queue_processing = True
             funny_text, acknowledgement, gen_type, args = request
-            await acknowledgement.edit_original_response(content=f'**{funny_text}**\nYour request is being processed!')
+            await acknowledgement.edit_original_response(content=f'{funny_text}\nYour request is being processed!')
             loop = asyncio.get_event_loop()
             if gen_type == "txt2img":
                 print(args)
