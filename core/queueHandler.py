@@ -56,7 +56,7 @@ def check_queue_placement():
 
 # Get all args from the processing command and formulate a message to send to the user
 def form_message(funny_text, message_args):
-    message = f"**{funny_text}**\n"
+    message = f"{funny_text}\n"
     for key, value in message_args.items():
         if not value != "":
             # skip empty values
