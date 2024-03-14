@@ -13,7 +13,7 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
-    gcc python3-dev ffmpeg libsm6 libxext6 \
+    git gcc python3-dev ffmpeg libsm6 libxext6 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
