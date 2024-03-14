@@ -1,4 +1,4 @@
-auto1111sdk>=0.0.95
+auto1111sdk @ git+https://github.com/saketh12/Auto1111SDK.git
 python-dotenv
 py-cord
 Pillow
