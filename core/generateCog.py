@@ -124,8 +124,9 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
 
         # get a funny message
         funny_text = utils.funny_message()
+        funny_text = "**" + funny_text + "**"
 
-        acknowledgement = await ctx.respond(f"**{funny_text}**\nGenerating {num_images} images for you!")
+        acknowledgement = await ctx.respond(f"{funny_text}\nGenerating {num_images} images for you!")
         # Send the request to the queue
         await core.queueHandler.add_request(funny_text, acknowledgement, "txt2img", prompt, negative_prompt,
                                             model_path, num_images, height, width, steps, cfg_scale, sampler_name,
@@ -223,8 +224,9 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
 
         # get a funny message
         funny_text = utils.funny_message()
+        funny_text = "**" + funny_text + "**"
 
-        acknowledgement = await ctx.respond(f"**{funny_text}**\nGenerating {num_images} images for you!")
+        acknowledgement = await ctx.respond(f"{funny_text}\nGenerating {num_images} images for you!")
         # Send the request to the queue
         await core.queueHandler.add_request(funny_text, acknowledgement, "img2img", prompt, negative_prompt,
                                             model_path, num_images, steps, cfg_scale, sampler_name,
@@ -312,8 +314,9 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
 
         # get a funny message
         funny_text = utils.funny_message()
+        funny_text = "**" + funny_text + "**"
 
-        acknowledgement = await ctx.respond(f"**{funny_text}**\nGenerating {num_images} images for you!")
+        acknowledgement = await ctx.respond(f"{funny_text}\nGenerating {num_images} images for you!")
         # Send the request to the queue
         await core.queueHandler.add_request(funny_text, acknowledgement, "controlnet", prompt, negative_prompt,
                                             model_path, num_images, steps, cfg_scale, sampler_name,

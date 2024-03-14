@@ -27,11 +27,11 @@ async def add_request(funny_text, acknowledgement, gen_type: str, *args):
     # Check the queue placement and update the acknowledgement message
     queue_spot = check_queue_placement()
     if queue_spot > 1:
-        await acknowledgement.edit_original_response(content=f'**{funny_text}**\nYour request is number {queue_spot} in the queue.')
+        await acknowledgement.edit_original_response(content=f'{funny_text}\nYour request is number {queue_spot} in the queue.')
     elif queue_spot == 1:
-        await acknowledgement.edit_original_response(content=f'**{funny_text}**\nYour request is next!')
+        await acknowledgement.edit_original_response(content=f'{funny_text}\nYour request is next!')
     else:
-        await acknowledgement.edit_original_response(content=f'**{funny_text}**\nYour request is being processed!')
+        await acknowledgement.edit_original_response(content=f'{funny_text}\nYour request is being processed!')
     # Print User's name, the type of request added to the queue, and the queue size
     print(f'Added a {gen_type} request to the queue.  Queue size:{command_queue.qsize()}')
 
