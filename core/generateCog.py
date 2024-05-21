@@ -437,6 +437,10 @@ class GenerateCog(commands.Cog, name="Generate", description="Generate images fr
                               clip_skip
                               ):
         model_exists = False
+
+        # Convert clip_skip to a string
+        clip_skip = str(clip_skip)
+
         with open('core/resources/model_settings.csv', encoding='UTF-8') as csv_file:
             model_data = list(csv.reader(csv_file, delimiter='|'))
             for row in model_data:
